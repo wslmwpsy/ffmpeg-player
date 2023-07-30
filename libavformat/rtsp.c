@@ -1423,6 +1423,8 @@ int ff_rtsp_send_cmd_with_content(AVFormatContext *s,
     HTTPAuthType cur_auth_type;
     int ret, attempts = 0;
 
+
+    int i, j = 0;
 retry:
     cur_auth_type = rt->auth_state.auth_type;
     if ((ret = rtsp_send_cmd_with_content_async(s, method, url, header,
