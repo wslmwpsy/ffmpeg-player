@@ -2177,7 +2177,7 @@ static int hls_read_header(AVFormatContext *s)
                 pls->ctx->nb_streams == 1)
                 ret = ff_hls_senc_parse_audio_setup_info(pls->ctx->streams[0], &pls->audio_setup_info);
             else
-                ret = avformat_find_stream_info(pls->ctx, NULL);
+                ret = avformat_find_stream_info(pls->ctx, NULL, NULL, NULL);
 
             if (ret < 0)
                 return ret;

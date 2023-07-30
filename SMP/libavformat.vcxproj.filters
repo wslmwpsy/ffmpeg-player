@@ -1588,6 +1588,9 @@
     <ClCompile Include="..\libavformat\libssh.c">
       <Filter>Source Files\libavformat</Filter>
     </ClCompile>
+    <ClCompile Include="..\libavformat\libsrt.c">
+      <Filter>Source Files\libavformat</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\libavformat\ac3_channel_layout_tab.c">

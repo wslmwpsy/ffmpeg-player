@@ -62,4 +62,5 @@ static const URLProtocol *url_protocols[] = {
     &ff_libssh_protocol,
     &ff_ipfs_gateway_protocol,
     &ff_ipns_gateway_protocol,
+    &ff_libsrt_protocol,
     NULL };

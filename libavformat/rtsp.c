@@ -1429,9 +1429,12 @@ retry:
                                                 send_content,
                                                 send_content_length)))
         return ret;
-
-    if ((ret = ff_rtsp_read_reply(s, reply, content_ptr, 0, method) ) < 0)
-        return ret;
+    if (strcmp(method, "PAUSE") == 0) {
+      reply->status_code = RTSP_STATUS_OK;
+      return 0;
+    }
+    if ((ret = ff_rtsp_read_reply(s, reply, content_ptr, 0, method)) < 0)
+      return ret;
     attempts++;
 
     if (reply->status_code == 401 &&

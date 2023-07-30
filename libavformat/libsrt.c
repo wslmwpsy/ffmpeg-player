@@ -21,7 +21,22 @@
  * Haivision Open SRT (Secure Reliable Transport) protocol
  */
 
+#define SRT_MAKE_VERSION(major, minor, patch) \
+   ((patch) + ((minor)*0x100) + ((major)*0x10000))
+#define SRT_MAKE_VERSION_VALUE SRT_MAKE_VERSION
+#define SRT_VERSION_MAJOR 1
+#define SRT_VERSION_MINOR 5
+#define SRT_VERSION_PATCH 1
+#define SRT_VERSION_STRING "1.5.1"
+#define SRT_VERSION_VALUE \
+   SRT_MAKE_VERSION_VALUE( \
+      SRT_VERSION_MAJOR, SRT_VERSION_MINOR, SRT_VERSION_PATCH )
 #include <srt/srt.h>
+#ifdef DEBUG
+#pragma comment(lib, "srt_static.lib")
+#else
+#pragma comment(lib, "srt_static.lib")
+#endif
 
 #include "libavutil/opt.h"
 #include "libavutil/parseutils.h"

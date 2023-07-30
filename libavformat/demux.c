@@ -1993,9 +1993,35 @@ static int has_codec_parameters(const AVStream *st, const char **errmsg_ptr)
     return 1;
 }
 
+const char *searchSimple(const char *haystack, size_t haystackLength,
+	const char *needle, size_t needleLength) {
+  if (!haystack || !needle || haystackLength < needleLength) {
+    return NULL;
+  }
+	haystackLength -= needleLength - 1;
+	const char *haystackEnd = haystack + haystackLength;
+	while (haystack != haystackEnd) {
+		size_t i = 0;
+		for (; i < needleLength; i++)
+      if (haystack[i] != needle[i]) {
+        break;
+      }
+    if (i == needleLength) {
+      return haystack;
+    }
+		haystack++;
+	}
+	return NULL;
+}
+#define FRMAE_TYPE_SIZE 6
+#define FRMAE_265_TYPE_SIZE 7
+static const char m_h264HasBK[FRMAE_TYPE_SIZE] = {0x06, 0xFF, 0x1F, 0x01, 0x01, 0x80}; // Frame Type 100
+static const char m_h264NoBK[FRMAE_TYPE_SIZE]  = {0x06, 0xFF, 0x1F, 0x01, 0x00, 0x80}; // Frame Type 101
+static const char m_h265HasBK[FRMAE_265_TYPE_SIZE] = {0x4E, 0x01, 0xFF, 0x1F, 0x01, 0x01, 0x80}; // Frame Type 200
+static const char m_h265NoBK[FRMAE_265_TYPE_SIZE]  = {0x4E, 0x01, 0xFF, 0x1F, 0x01, 0x00, 0x80}; // Frame Type 201
 /* returns 1 or 0 if or if not decoded data was returned, or a negative error */
 static int try_decode_frame(AVFormatContext *s, AVStream *st,
-                            const AVPacket *pkt, AVDictionary **options)
+                            const AVPacket *pkt, AVDictionary **options, STREAMFRAMECALLBACK callback, void *callbackParam)
 {
     FFStream *const sti = ffstream(st);
     AVCodecContext *const avctx = sti->avctx;
@@ -2006,6 +2032,21 @@ static int try_decode_frame(AVFormatContext *s, AVStream *st,
     int do_skip_frame = 0;
     enum AVDiscard skip_frame;
     int pkt_to_send = pkt->size > 0;
+    if (callback && pkt && pkt->size > 0/* && (pkt->flags & AV_PKT_FLAG_KEY)*/) {
+      if (st->codecpar->codec_id == AV_CODEC_ID_HEVC) {
+        if (searchSimple(pkt->data, pkt->size, m_h265HasBK, FRMAE_265_TYPE_SIZE)) {
+          callback(NULL, 100, callbackParam);
+        } else if (searchSimple(pkt->data, pkt->size, m_h265NoBK, FRMAE_265_TYPE_SIZE)) {
+					callback(NULL, 101, callbackParam);
+				}
+      } else if (st->codecpar->codec_id == AV_CODEC_ID_H264) {
+        if (searchSimple(pkt->data, pkt->size, m_h264HasBK, FRMAE_TYPE_SIZE)) {
+          callback(NULL, 200, callbackParam);
+        } else if (searchSimple(pkt->data, pkt->size, m_h264NoBK, FRMAE_TYPE_SIZE)) {
+					callback(NULL, 201, callbackParam);
+				}
+      }
+    }
 
     if (!frame)
         return AVERROR(ENOMEM);
@@ -2090,6 +2131,9 @@ static int try_decode_frame(AVFormatContext *s, AVStream *st,
 fail:
     if (do_skip_frame) {
         avctx->skip_frame = skip_frame;
+    }
+    if (got_picture && callback && frame->width > 0 && frame->height > 0) {
+      callback(frame, 0, callbackParam);
     }
 
     av_frame_free(&frame);
@@ -2434,7 +2478,7 @@ static int add_coded_side_data(AVStream *st, AVCodecContext *avctx)
     return 0;
 }
 
-int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
+int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options, STREAMFRAMECALLBACK callback, void *callbackParam)
 {
     FFFormatContext *const si = ffformatcontext(ic);
     int count = 0, ret = 0;
@@ -2759,7 +2803,7 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
          * the channel configuration and does not only trust the values from
          * the container. */
         try_decode_frame(ic, st, pkt,
-                         (options && i < orig_nb_streams) ? &options[i] : NULL);
+                         (options && i < orig_nb_streams) ? &options[i] : NULL, callback, callbackParam);
 
         if (ic->flags & AVFMT_FLAG_NOBUFFER)
             av_packet_unref(pkt1);
@@ -2806,7 +2850,7 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
             if (sti->info->found_decoder == 1) {
                 err = try_decode_frame(ic, st, empty_pkt,
                                         (options && i < orig_nb_streams)
-                                        ? &options[i] : NULL);
+                                        ? &options[i] : NULL, callback, callbackParam);
 
                 if (err < 0) {
                     av_log(ic, AV_LOG_INFO,

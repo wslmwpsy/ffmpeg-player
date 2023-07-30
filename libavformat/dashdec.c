@@ -1914,7 +1914,7 @@ static int reopen_demux_for_component(AVFormatContext *s, struct representation 
                 pls->ctx->streams[i]->r_frame_rate = pls->framerate;
         }
 #endif
-        ret = avformat_find_stream_info(pls->ctx, NULL);
+        ret = avformat_find_stream_info(pls->ctx, NULL, NULL, NULL);
         if (ret < 0)
             goto fail;
     }

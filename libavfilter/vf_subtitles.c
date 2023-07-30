@@ -335,7 +335,7 @@ static av_cold int init_subtitles(AVFilterContext *ctx)
         av_log(ctx, AV_LOG_ERROR, "Unable to open %s\n", ass->filename);
         goto end;
     }
-    ret = avformat_find_stream_info(fmt, NULL);
+    ret = avformat_find_stream_info(fmt, NULL, NULL, NULL);
     if (ret < 0)
         goto end;
 

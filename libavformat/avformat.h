@@ -1713,6 +1713,8 @@ typedef struct AVFormatContext {
      * @return 0 on success, a negative AVERROR code on failure
      */
     int (*io_close2)(struct AVFormatContext *s, AVIOContext *pb);
+    void *playbackOpaque;
+    int (*playback_rate_callback)(void *playbackOpaque);
 } AVFormatContext;
 
 /**
@@ -2029,7 +2031,8 @@ int avformat_open_input(AVFormatContext **ps, const char *url,
  * @todo Let the user decide somehow what information is needed so that
  *       we do not waste time getting stuff the user does not need.
  */
-int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options);
+typedef int(*STREAMFRAMECALLBACK)(AVFrame *frame, int frameType, void *param);
+int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options, STREAMFRAMECALLBACK callback, void *callbackParam);
 
 /**
  * Find the programs which belong to a given stream.

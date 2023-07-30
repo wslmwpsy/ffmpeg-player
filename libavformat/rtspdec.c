@@ -559,13 +559,27 @@ static int rtsp_read_play(AVFormatContext *s)
                 rtpctx->rtcp_ts_offset      = 0;
             }
         }
+        int playbackRate = 1000;
+        if (s->playback_rate_callback) {
+          playbackRate = s->playback_rate_callback(s->playbackOpaque);
+        }
         if (rt->state == RTSP_STATE_PAUSED) {
-            cmd[0] = 0;
+						snprintf(cmd, sizeof(cmd),
+							"Scale: %.3f\r\n",
+							playbackRate / 1000.0f);
         } else {
+          if (playbackRate == 1000) {
             snprintf(cmd, sizeof(cmd),
                      "Range: npt=%"PRId64".%03"PRId64"-\r\n",
                      rt->seek_timestamp / AV_TIME_BASE,
                      rt->seek_timestamp / (AV_TIME_BASE / 1000) % 1000);
+          } else {
+            snprintf(cmd, sizeof(cmd),
+              "Range: npt=%"PRId64".%03"PRId64"-\r\nScale: %.3f\r\n",
+              rt->seek_timestamp / AV_TIME_BASE,
+              rt->seek_timestamp / (AV_TIME_BASE / 1000) % 1000,
+              playbackRate / 1000.0f);
+          }
         }
         ff_rtsp_send_cmd(s, "PLAY", rt->control_uri, cmd, reply, NULL);
         if (reply->status_code != RTSP_STATUS_OK) {
@@ -579,7 +593,7 @@ static int rtsp_read_play(AVFormatContext *s)
                 AVStream *st = NULL;
                 if (!rtpctx || rtsp_st->stream_index < 0)
                     continue;
-
+        
                 st = s->streams[rtsp_st->stream_index];
                 rtpctx->range_start_offset =
                     av_rescale_q(reply->range_start, AV_TIME_BASE_Q,

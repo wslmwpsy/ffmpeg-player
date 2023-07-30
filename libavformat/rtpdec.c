@@ -773,7 +773,8 @@ static int rtp_parse_packet_internal(RTPDemuxContext *s, AVPacket *pkt,
 
     // now perform timestamp things....
     finalize_packet(s, pkt, timestamp);
-
+    av_log(s->ic, AV_LOG_TRACE,
+      "RTP: seq %d packets\n", s->seq);
     return rv;
 }
 

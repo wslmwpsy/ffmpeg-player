@@ -1437,7 +1437,7 @@ int ifile_open(const OptionsContext *o, const char *filename)
 
         /* If not enough info to get the stream parameters, we decode the
            first frames to get it. (used in mpeg case for example) */
-        ret = avformat_find_stream_info(ic, opts);
+        ret = avformat_find_stream_info(ic, opts, NULL, NULL);
 
         for (i = 0; i < orig_nb_streams; i++)
             av_dict_free(&opts[i]);
